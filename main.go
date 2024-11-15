@@ -48,28 +48,6 @@ func itemsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(items)
 }
 
-// helloHandler handles the "/hello" endpoint
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	addCORSHeaders(w, r)
-
-	// Handle preflight requests
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	// Only allow GET method
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-		return
-	}
-
-	// Create and send the response
-	response := map[string]string{"message": "Hello, World!"}
-	json.NewEncoder(w).Encode(response)
-}
-
 // main function initializes and starts the server
 func main() {
 	http.HandleFunc("/v1/items", itemsHandler)
