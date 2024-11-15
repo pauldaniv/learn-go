@@ -6,15 +6,57 @@ import (
 	"net/http"
 )
 
-// HelloResponse represents the JSON structure for the "Hello" response
-type HelloResponse struct {
-	Message string `json:"message"`
+// Item represents an individual item in the list
+type Item struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Price string `json:"price"`
 }
 
-// helloHandler handles the "Hello" endpoint
+// addCORSHeaders adds CORS headers to the response
+func addCORSHeaders(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
+
+// itemsHandler handles the "/items" endpoint
+func itemsHandler(w http.ResponseWriter, r *http.Request) {
+	addCORSHeaders(w, r)
+
+	// Handle preflight requests
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Only allow GET method
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
+		return
+	}
+
+	// Create a list of items
+	items := []Item{
+		{ID: 1, Name: "Laptop", Price: "$999"},
+		{ID: 2, Name: "Smartphone", Price: "$799"},
+		{ID: 3, Name: "Tablet", Price: "$499"},
+	}
+
+	// Send the list of items as JSON response
+	json.NewEncoder(w).Encode(items)
+}
+
+// helloHandler handles the "/hello" endpoint
 func helloHandler(w http.ResponseWriter, r *http.Request) {
-	// Set the Content-Type header to application/json
-	w.Header().Set("Content-Type", "application/json")
+	addCORSHeaders(w, r)
+
+	// Handle preflight requests
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	// Only allow GET method
 	if r.Method != http.MethodGet {
@@ -24,13 +66,13 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create and send the response
-	response := HelloResponse{Message: "Hello, World!"}
+	response := map[string]string{"message": "Hello, World!"}
 	json.NewEncoder(w).Encode(response)
 }
 
 // main function initializes and starts the server
 func main() {
-	http.HandleFunc("/hello", helloHandler)
+	http.HandleFunc("/v1/items", itemsHandler)
 
 	port := 8080
 	fmt.Printf("Server running on http://localhost:%d\n", port)
