@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: service
+      POSTGRES_DB: finance
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
