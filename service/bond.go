@@ -1,9 +1,9 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"finance/model"
+	"finance/persistence"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
@@ -24,39 +24,13 @@ func ListBonds(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
 		return
 	}
+	bonds, err := persistence.FindAll(dbPool)
 
-	// Query the database for bonds
-	rows, err := dbPool.Query(context.Background(), "SELECT id, name, count, buy_price, sell_price, currency_type, start_date, end_date, created_at FROM bonds")
 	if err != nil {
-		http.Error(w, "Failed to fetch bonds from database", http.StatusInternalServerError)
-		log.Printf("Database query error: %v\n", err)
+		http.Error(w, "Failed to parse database result", http.StatusInternalServerError)
+		log.Printf("Row scan error: %v\n", err)
 		return
 	}
-	defer rows.Close()
-
-	// Parse the results into a list of bonds
-	var bonds []model.Bond
-	for rows.Next() {
-		var bond model.Bond
-		err := rows.Scan(
-			&bond.ID,
-			&bond.Name,
-			&bond.Count,
-			&bond.BuyPrice,
-			&bond.SellPrice,
-			&bond.CurrencyType,
-			&bond.StartDate,
-			&bond.EndDate,
-			&bond.CreatedAt,
-		)
-		if err != nil {
-			http.Error(w, "Failed to parse database result", http.StatusInternalServerError)
-			log.Printf("Row scan error: %v\n", err)
-			return
-		}
-		bonds = append(bonds, bond)
-	}
-
 	// Send the list of bonds as JSON response
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(bonds); err != nil {
@@ -67,13 +41,6 @@ func ListBonds(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
 
 // AddBond handles POST requests to add a new bond
 func AddBond(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
-
-	// Only allow POST method
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-		return
-	}
 
 	// Parse the incoming JSON request body
 	var bond model.Bond
@@ -90,20 +57,8 @@ func AddBond(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
 		return
 	}
 
-	// Insert the new bond into the database
-	query := `INSERT INTO bonds (id, name, count, buy_price, sell_price, currency_type, start_date, end_date, created_at) 
-				  VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, now())`
-	_, err := dbPool.Exec(
-		context.Background(),
-		query,
-		bond.Name,
-		bond.Count,
-		bond.BuyPrice,
-		bond.SellPrice,
-		bond.CurrencyType,
-		bond.StartDate,
-		bond.EndDate,
-	)
+	record, err := persistence.StoreBond(bond, dbPool)
+
 	if err != nil {
 		http.Error(w, "Failed to save bond", http.StatusInternalServerError)
 		log.Printf("Database insert error: %v\n", err)
@@ -111,8 +66,9 @@ func AddBond(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
 	}
 
 	// Respond with success
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Bond added successfully"})
+	json.NewEncoder(w).Encode(record)
 }
 
 // HandleBonds handles both GET and POST requests for bonds
