@@ -11,6 +11,10 @@ import (
 	"os"
 )
 
+func setupHandlers(mux *http.ServeMux, connPool *pgxpool.Pool) {
+	mux.HandleFunc("/v1/bonds", service.HandleBonds(connPool))
+}
+
 // main function initializes and starts the server
 func main() {
 
@@ -29,16 +33,13 @@ func main() {
 	err = connection.Ping(context.Background())
 	if err != nil {
 		log.Fatal("Could not ping database")
+	} else {
+		fmt.Println("Connected to the database!!")
 	}
-
-	fmt.Println("Connected to the database!!")
-
 	defer connPool.Close()
 
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("/v1/bonds", service.ListBonds(connPool))
-
+	setupHandlers(mux, connPool)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
