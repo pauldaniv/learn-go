@@ -1,9 +1,9 @@
-package main
+package config
 
 import "net/http"
 
 // addCORSHeaders adds CORS headers to the response
-func corsMiddleware(next http.Handler) http.Handler {
+func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")

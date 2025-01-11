@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"finance/model"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
 )
 
 // itemsHandler handles the "/items" endpoint
-func listBonds(dbPool *pgxpool.Pool) http.HandlerFunc {
+func ListBonds(dbPool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Handle preflight requests
@@ -34,16 +36,16 @@ func listBonds(dbPool *pgxpool.Pool) http.HandlerFunc {
 		defer rows.Close()
 
 		// Parse the results into a list of bonds
-		var bonds []Bond
+		var bonds []model.Bond
 		for rows.Next() {
-			var bond Item
+			var bond model.Bond
 			err := rows.Scan(
 				&bond.ID,
 				&bond.Name,
-				&bond.Price,
 				&bond.Count,
 				&bond.BuyPrice,
 				&bond.SellPrice,
+				&bond.CurrencyType,
 				&bond.StartDate,
 				&bond.EndDate,
 				&bond.CreatedAt,

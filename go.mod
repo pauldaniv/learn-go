@@ -1,4 +1,4 @@
-module service
+module finance
 
 go 1.23
 

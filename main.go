@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"finance/config"
+	"finance/service"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/pauldaniv/learn-go/service"
 	"log"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ import (
 func main() {
 
 	// Create database connection
-	connPool, err := pgxpool.NewWithConfig(context.Background(), DbConfig())
+	connPool, err := pgxpool.NewWithConfig(context.Background(), config.DbConfig())
 	if err != nil {
 		log.Fatal("Error while creating connection to the database!!")
 	}
@@ -36,7 +37,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/v1/bonds", listBonds(connPool))
+	mux.HandleFunc("/v1/bonds", service.ListBonds(connPool))
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -44,7 +45,7 @@ func main() {
 	}
 
 	fmt.Printf("Server running on http://localhost:%d\n", port)
-	if err := http.ListenAndServe(":"+port, corsMiddleware(mux)); err != nil {
+	if err := http.ListenAndServe(":"+port, config.CorsMiddleware(mux)); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }
