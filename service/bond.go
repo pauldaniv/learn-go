@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"finance/model"
 	"finance/persistence"
+	"finance/util"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
@@ -11,19 +12,6 @@ import (
 
 // itemsHandler handles the "/items" endpoint
 func ListBonds(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
-
-	// Handle preflight requests
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	// Only allow GET method
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-		return
-	}
 	bonds, err := persistence.FindAll(dbPool)
 
 	if err != nil {
@@ -32,6 +20,10 @@ func ListBonds(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
 		return
 	}
 	// Send the list of bonds as JSON response
+	sendResponse(w, bonds)
+}
+
+func sendResponse(w http.ResponseWriter, bonds interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(bonds); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
@@ -56,7 +48,7 @@ func AddBond(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
 		log.Println("Validation failed for input fields")
 		return
 	}
-
+	bond.ID = util.RandomId()
 	record, err := persistence.StoreBond(bond, dbPool)
 
 	if err != nil {
@@ -65,10 +57,7 @@ func AddBond(w http.ResponseWriter, r *http.Request, dbPool *pgxpool.Pool) {
 		return
 	}
 
-	// Respond with success
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(record)
+	sendResponse(w, record)
 }
 
 // HandleBonds handles both GET and POST requests for bonds

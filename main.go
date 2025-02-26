@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 func setupHandlers(mux *http.ServeMux, connPool *pgxpool.Pool) {
@@ -40,13 +41,18 @@ func main() {
 
 	mux := http.NewServeMux()
 	setupHandlers(mux, connPool)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	port_str := os.Getenv("PORT")
+	if port_str == "" {
+		port_str = "8080"
 	}
-
+	// string to int
+	port, err := strconv.Atoi(port_str)
+	if err != nil {
+		// ... handle error
+		panic(err)
+	}
 	fmt.Printf("Server running on http://localhost:%d\n", port)
-	if err := http.ListenAndServe(":"+port, config.CorsMiddleware(mux)); err != nil {
+	if err := http.ListenAndServe(":"+port_str, config.CorsMiddleware(mux)); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }

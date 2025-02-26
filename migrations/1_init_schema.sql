@@ -64,6 +64,7 @@ create table bonds
 (
     id            text primary key,
     name          text,
+    isin varchar(12) not null,
     count         int            not null,
     buy_price     numeric(10, 2) not null,
     sell_price    numeric(10, 2) not null,

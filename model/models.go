@@ -65,6 +65,7 @@ type Deposit struct {
 type Bond struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
+	IsIn         string    `json:"isin"`
 	Count        int       `json:"count"`
 	BuyPrice     float64   `json:"buy_price"`
 	SellPrice    float64   `json:"sell_price"`

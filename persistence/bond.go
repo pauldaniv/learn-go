@@ -19,7 +19,7 @@ func FindAll(dbPool *pgxpool.Pool) ([]model.Bond, error) {
 	defer rows.Close()
 
 	// Parse the results into a list of bonds
-	var bonds []model.Bond
+	bonds := []model.Bond{}
 	for rows.Next() {
 		var bond model.Bond
 		err := rows.Scan(
@@ -55,15 +55,17 @@ func FindAll(dbPool *pgxpool.Pool) ([]model.Bond, error) {
 func StoreBond(bond model.Bond, dbPool *pgxpool.Pool) (model.Bond, error) {
 
 	// Insert the new bond into the database and return the inserted record
-	query := `INSERT INTO bonds (id, name, count, buy_price, sell_price, currency_type, start_date, end_date, created_at) 
-			  VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, now())
-			  RETURNING id, name, count, buy_price, sell_price, currency_type, start_date, end_date, created_at`
+	query := `INSERT INTO bonds (id, name, isin, count, buy_price, sell_price, currency_type, start_date, end_date, created_at) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
+			  RETURNING id, name, isin, count, buy_price, sell_price, currency_type, start_date, end_date, created_at`
 
 	var insertedBond model.Bond
 	err := dbPool.QueryRow(
 		context.Background(),
 		query,
+		bond.ID,
 		bond.Name,
+		bond.IsIn,
 		bond.Count,
 		bond.BuyPrice,
 		bond.SellPrice,
@@ -73,6 +75,7 @@ func StoreBond(bond model.Bond, dbPool *pgxpool.Pool) (model.Bond, error) {
 	).Scan(
 		&insertedBond.ID,
 		&insertedBond.Name,
+		&insertedBond.IsIn,
 		&insertedBond.Count,
 		&insertedBond.BuyPrice,
 		&insertedBond.SellPrice,
